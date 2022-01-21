@@ -22,7 +22,27 @@ from pynput.keyboard import Key
 #Import listeners to listen to keyboard/mouse inputs
 from pynput.mouse import Button, Controller as MouseController
 from pynput.mouse import Listener as MouseListener
+from sys import platform
 
+def _get_os_config_directory() -> str:
+    #directory where macros and keybins are stored. initialized with illegial characters to stop accidental macros being stored in root...
+    set_os_macroconfig_store = "!?[]{]\""
+
+    if platform == "linux" or platform == "linux2":
+        set_os_macroconfig_store = os.environ['HOME'] + "/.local/pymacromaker"
+        pass
+        # linux
+    elif platform == "darwin":
+        raise Exception("No keybind/macro directory set for this OS X. Fix that then remove this exception")
+        pass
+        # OS X
+    elif platform == "win32":
+        raise Exception("No keybind/macro directory set for windows. Fix that then remove this exception.")
+        pass
+    else:
+        raise Exception("Huh, what OS is this? Anyway, no keybind/macro directory set for this OS. ")
+        # Windows...
+    return set_os_macroconfig_store
 
 place_to_round_to = 2
 
@@ -207,7 +227,7 @@ class key_presses():
 def save_macro(name, keys_to_store: List[key_presses]):
     """Save macros in /macros folder in the same directory as input handler."""
     #Store macro same directory as python file is being executed in
-    name = os.getcwd() + "/macros/" + name
+    name = _get_os_config_directory() + "/macros/" + name
     with open((name + '.txt'), 'w') as filehandle:
         for listitem in keys_to_store:
             #Keycodes encase alphabetical characters in single quotes, I.E, e becomes 'e'. this needs to be removed becasue pynput cant read its own formating.
@@ -224,7 +244,7 @@ def load_macro(name) -> List[key_presses]:
     #Macro list to construct
     current_macro = []
     try:
-        with open(("macros/" + name + '.txt'), 'r') as filehandle:
+        with open((_get_os_config_directory() + name + '.txt'), 'r') as filehandle:
             for line in filehandle:
                 constructed_key = key_presses()
                 # remove linebreak which is the last character of the string
