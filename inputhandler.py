@@ -225,10 +225,13 @@ class key_presses():
                 print(self._control_type + " pressed, current key is now set to " + str(self))
         
 def save_macro(name, keys_to_store: List[key_presses]):
+    macro_config_directory = _get_os_config_directory() + "/macros/"
     """Save macros in /macros folder in the same directory as input handler."""
     #Store macro same directory as python file is being executed in
-    name = _get_os_config_directory() + "/macros/" + name
-    with open((name + '.txt'), 'w') as filehandle:
+    if(os.path.exists(macro_config_directory) == False):
+        print("No config folder found, creating a new config folder at: " + macro_config_directory)
+        os.makedirs(macro_config_directory)
+    with open((macro_config_directory + name + '.txt'), 'w') as filehandle:
         for listitem in keys_to_store:
             #Keycodes encase alphabetical characters in single quotes, I.E, e becomes 'e'. this needs to be removed becasue pynput cant read its own formating.
             listitem = str(listitem).replace("'", "")
@@ -236,6 +239,7 @@ def save_macro(name, keys_to_store: List[key_presses]):
 
 #Construct macro(keypress list) based on saved macro file.
 def load_macro(name) -> List[key_presses]:
+    macro_config_directory = _get_os_config_directory() + "/macros/"
     """
     Load macros in /macros folder in the same directory as input handler.
     exclude file extension
@@ -243,8 +247,15 @@ def load_macro(name) -> List[key_presses]:
 
     #Macro list to construct
     current_macro = []
+
+
+    #Setup config folder to store macros if no config folder already exists
+    if(os.path.exists(macro_config_directory) == False):
+        raise Exception("No macro folder found! Create or load some macros into: " + macro_config_directory)
+        #print("No config folder found, creating a new config folder at: " + macro_config_directory() + "/macros/")
+        #os.makedirs(_get_os_config_directory)
     try:
-        with open((_get_os_config_directory() + name + '.txt'), 'r') as filehandle:
+        with open((macro_config_directory + name + '.txt'), 'r') as filehandle:
             for line in filehandle:
                 constructed_key = key_presses()
                 # remove linebreak which is the last character of the string

@@ -100,10 +100,6 @@ def change_keybinds():
         key.listen_start()
         pressed_key = key_as_string(key.keys)
 
-        #print(pressed_key)
-        #print(list(Keybinds.keys())[0] )
-        #print(pressed_key)
-        #print(Keybinds["start|stop_recording"])
         if pressed_key == "Q":
             print("quiting setting keybind")
             break
@@ -163,12 +159,14 @@ def play_macro(macro_name):
         previous_key_time = key.press_end_time_at_epoch
 
 def start_pymacromaker():
-    _retrieve_keybinds()
-    print(Keybinds)
-    change_keybinds()
-    save_keybinds()
-    print(Keybinds)
+    #_retrieve_keybinds()
+    #print(Keybinds)
+    #Keybinds can be changed without saving them. So saving them after changing them is required. 
+    #change_keybinds()
+    #save_keybinds()
+    #print(Keybinds)
     #make_macro("test_macro")
+    play_macro("test_macro")
 start_pymacromaker()
 
 #make_macro("Taweawe")
