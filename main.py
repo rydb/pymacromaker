@@ -165,8 +165,8 @@ def start_pymacromaker():
     #change_keybinds()
     #save_keybinds()
     #print(Keybinds)
-    #make_macro("test_macro")
-    play_macro("test_macro")
+    make_macro("new_feature")
+    play_macro("new_feature")
 start_pymacromaker()
 
 #make_macro("Taweawe")

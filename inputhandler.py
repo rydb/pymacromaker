@@ -52,6 +52,25 @@ debug = False
 #Keys which are ignored due to them being used to input other keys(caps lock, shift, etc..), or by merit of them being inconsistent
 ignored_keys = ["Key.shift"]
 
+#stirng used to seperate variables in macro storage.
+sep_str = " | "
+
+###
+#Macro variable name space. Since pointing to in-code variables themselves would cause any pre-existing macro file to break anytime a variable name is changed in new versions, I've instead opted to make a big list of unsorted variables
+#that correlate to respective in-code key_clss variables. This way, when the macro is being read from a .txt, the name in code and in the macro file can be indepdendent and or different.  
+
+#I.E: 
+# In code name of mouse position: mouse_pos_xy
+# in macro file name of mouse position: mouse_pos
+
+# If I want to change mouse_pos name in code, I can, without breaking macro files made before the variable name change. 
+###
+control_type_variable_name = "control_type"
+key_name_variable_name = "key"
+hold_duration_variable_name = "hold_duration_s"
+press_end_at_epoch_variable_name = "press_end_time_at_epoch"
+mouse_pos_variable_name = "mouse_pos"
+
 #For some reason, pynput doesnt have an internal dictionary to convert non alphabetic keys to pynput presses, so I need to make a dictionary to do that..
 key_to_object_dict = {
     #non alpha keys
@@ -101,10 +120,12 @@ class key_presses():
         self.mouse_listener = MouseListener(on_click=self._on_click)
         
     def __str__(self):
-        return str(self._control_type) + " " + str(self.keys) + " " + str(self.hold_duration_s) + " " + str(self.press_end_time_at_epoch) + " " + str(self.mouse_pos_xy)
+        #I could probably recycle the variable names here, but then theres an issue of "oh no, I broke everyone's macros because I changed keys to key!"
+        return control_type_variable_name + "]" + str(self._control_type) + sep_str + key_name_variable_name + "]" + str(self.keys) + sep_str + hold_duration_variable_name + "]" + str(self.hold_duration_s) + sep_str + press_end_at_epoch_variable_name + "]" + str(self.press_end_time_at_epoch) + sep_str + mouse_pos_variable_name + "]" + str(self.mouse_pos_xy)
 
     def __repr__(self):
-        return str(self._control_type) + " " + str(self.keys) + " " + str(self.hold_duration_s) + " " + str(self.press_end_time_at_epoch) + " " + str(self.mouse_pos_xy)
+        return control_type_variable_name + "]" + str(self._control_type) + sep_str + key_name_variable_name + "]" + str(self.keys) + sep_str + hold_duration_variable_name + "]" + str(self.hold_duration_s) + sep_str + press_end_at_epoch_variable_name + "]" + str(self.press_end_time_at_epoch) + sep_str + mouse_pos_variable_name + "]" + str(self.mouse_pos_xy)
+
 
 
     def press_stored_key(self, epoch_time_to_wait_before_press=0, hold_duration_override=0):
@@ -234,6 +255,7 @@ def save_macro(name, keys_to_store: List[key_presses]):
     with open((macro_config_directory + name + '.txt'), 'w') as filehandle:
         for listitem in keys_to_store:
             #Keycodes encase alphabetical characters in single quotes, I.E, e becomes 'e'. this needs to be removed becasue pynput cant read its own formating.
+            #print(listitem)
             listitem = str(listitem).replace("'", "")
             filehandle.write('%s\n' % listitem)
 
@@ -258,39 +280,63 @@ def load_macro(name) -> List[key_presses]:
         with open((macro_config_directory + name + '.txt'), 'r') as filehandle:
             for line in filehandle:
                 constructed_key = key_presses()
-                # remove linebreak which is the last character of the string
 
-                #also strip all uneeded characters in string when reading macro
-                currentLine = [s.strip("(),") for s in line[:-1].split(" ")]
+                #remove \n at begining of readline
+                line = line.rstrip('\n')
+                unfilt_currentLine = line.split(sep_str)
+                #print("unfilt line is " + str(unfilt_currentLine))
+                currentLine = [s.split("]") for s in unfilt_currentLine]
+
+                #print("current line is " + str(currentLine))
+                #param_name = curr.split("]")[:-1]
+
+                #print(param_name)
                 if(debug):
                     print("<<MACRO LOAD>> current read line is: " + str(currentLine))
-                constructed_key._control_type = currentLine[0]
                 #constructed_key.key.key_object = currentLine[1]
                 
-                if(debug):
-                    print("<<MACRO LOAD>> input delay is: " + currentLine[2])
-                constructed_key.hold_duration_s = float(currentLine[2])
+                #python doesnt have pointers, so putting things into a big list is variables that cor
+                for setting in currentLine:
+                    #print("setting is " + str(setting))
+                    #check for hcontrol type
+                    if(setting[0] == control_type_variable_name):
+                        constructed_key._control_type = setting[1]
+                        pass
+                    #check for key
+                    elif(setting[0] == key_name_variable_name):
+                        #Correlate non-alphabetical key-codes to their pynput counterpart via dictionary containing them, if that fails, assign to macro list as string(will work for alphabetical characters)
+                        try:              
+                            constructed_key.keys = key_to_object_dict[setting[1]]
+                        except:
+                            constructed_key.keys = setting[1]
 
-                #Correlate non-alphabetical key-codes to their pynput counterpart via dictionary containing them, if that fails, assign to macro list as string(will work for alphabetical characters)
-                try:              
-                    constructed_key.keys = key_to_object_dict[currentLine[1]]
-                    print(constructed_key.keys)
-                except:
-                    print(currentLine[1])
-                    constructed_key.keys = currentLine[1]
-                    pass
-                if(debug):
-                    print("<<MACRO LOAD>> key press ended at time epoch of: " + currentLine[3])
+                    #check for hold duration
+                    elif(setting[0] == hold_duration_variable_name):
+                        constructed_key.hold_duration_s = float(setting[1])            
 
-                constructed_key.press_end_time_at_epoch = float(currentLine[3])
-                constructed_key.mouse_pos_xy = (int(currentLine[-2]), int(currentLine[-1]))
+                    #check for time press ended at epoch
+                    elif(setting[0] == press_end_at_epoch_variable_name):
+                        constructed_key.press_end_time_at_epoch = float(setting[1])
+                    
+                    #check for mouse_pos
+                    elif(setting[0] == mouse_pos_variable_name):
+                        #print(setting)
+                        #cleanup string to add as mouse pos
+                        setting[1] = setting[1].replace("(", "")
+                        setting[1] = setting[1].replace(")", "")
+                        setting[1] = setting[1].replace(" ", "")
+
+                        setting[1] = setting[1].split(",")
+                        #print("mouse setting is " + str(setting[1]))
+                        constructed_key.mouse_pos_xy = (int(setting[1][0]), int(setting[1][1]))
 
                 if(debug):
                     print("<<MACRO LOAD>> final constructed key is: " + str(constructed_key))
+
                 current_macro.append(constructed_key)
     except Exception as e:
         print("<<MACRO LOAD>> ran into error constructing macro, investigate.")
         print("<<MACRO LOAD>> Actual error: " + traceback.format_exc())
 
-    print(current_macro)
+    #print(current_macro)
     return current_macro
