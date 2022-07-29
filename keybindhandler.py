@@ -2,6 +2,8 @@ from inputhandler import key_presses, load_macro, save_macro
 import os
 import yaml
 from sys import platform
+import numpy as np
+
 
 def key_as_string(key):
     return str(key).replace("'", "")
@@ -34,14 +36,15 @@ if platform == "linux" or platform == "linux2":
     pass
     # linux
 elif platform == "darwin":
-    raise Exception("No keybind/macro directory set for this OS X. Fix that then remove this exception")
+    raise Exception("No keybind/macro directory set for OS X. Fix that then remove this exception")
     pass
     # OS X
 elif platform == "win32":
     raise Exception("No keybind/macro directory set for windows. Fix that then remove this exception.")
     pass
 else:
-    raise Exception("Huh, what OS is this? Anyway, no keybind/macro directory set for this OS. ")
+    raise Exception("No keybind/macro directory set for " + str(platform) + ". This OS is also unknown,\
+         a new platform macro folder needs to be set for whatever this is")
     # Windows...
 
 #default keybinds
@@ -87,6 +90,7 @@ def save_keybinds():
             pass
         with open(keybinds_directory + 'keybinds.yaml', 'w') as out:
             yaml.dump(Keybinds, out, default_flow_style=False)
+
 def change_keybinds():
     global Keybinds
     print("Press the keybind once first, then press a different key to change it to that key. Press shift + q or caps lock q to exit")
@@ -125,8 +129,16 @@ def change_keybinds():
 
 def make_macro(macro_name):
     key_list = []
+    """
+    all saved keys to execute in final macro
+    """
     recording_paused = False
-    print("Macro recording started, check keybinds for what does what. ")
+
+    print("Macro recording started, keybinds: ")
+    for command in Keybinds.keys():
+        print("%s: |%s|" % (command, Keybinds[command]))
+        
+
     while True:
         key = key_presses()
         key.listen_start()
@@ -158,10 +170,9 @@ def play_macro(macro_name):
         previous_key_time = key.press_end_time_at_epoch
 
 def start_pymacromaker():
-    #make_macro("new_feature")
-    play_macro("new_feature")
+    make_macro("new_feature")
+    #play_macro("new_feature")
 start_pymacromaker()
 
-#make_macro("Taweawe")
 
-#print(os.environ['HOME'] + "/.local/pymacromaker")
+
